@@ -1,0 +1,29 @@
+{
+  "name": "holographic-ar-interface",
+  "version": "1.0.0",
+  "description": "Futuristic Sci-Fi / Minority Report Holographic Augmented Reality interface with Three.js and MediaPipe",
+  "type": "module",
+  "scripts": {
+    "start": "python serve.py",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "augmented-reality",
+    "threejs",
+    "mediapipe",
+    "computer-vision",
+    "sci-fi-hud",
+    "cyberpunk"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^8.3.7"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^1.2.2",
+    "three": "^0.187.0"
+  }
+}

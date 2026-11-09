@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Agentic Control Matrix // Futuristic Hand-Gesture AI Robot</title>
+  <link rel="stylesheet" href="/src/style.css">
+</head>
+<body>
+
+  <!-- Fullscreen Mirrored Webcam Video -->
+  <video id="webcam" autoplay playsinline muted></video>
+
+  <!-- Three.js 3D WebGL Canvas Overlay -->
+  <canvas id="scene-canvas"></canvas>
+
+  <!-- 2D Canvas Overlay for Glowing Strings, Lasers & Fingertip Reticles -->
+  <canvas id="strings-canvas"></canvas>
+
+  <!-- CRT Scanlines and Cyber Vignette FX -->
+  <div id="crt-fx"></div>
+
+  <!-- Top HUD Status Header -->
+  <header class="hud-header">
+    <div class="hud-pill">
+      <span class="pill-dot"></span>
+      <span style="font-weight: bold; letter-spacing: 2px;">AGENTIC CONTROL MATRIX</span>
+    </div>
+    <div class="hud-pill">
+      <span style="color: #ffffff; font-weight: bold; margin-right: 4px;">AGENT 0</span>
+      <span id="robot-status-badge" class="status-badge idle">STATUS: IDLE</span>
+    </div>
+    <div class="hud-pill orange">
+      <span>TRACKER:</span>
+      <strong id="hud-tracker-status">INITIALIZING</strong>
+    </div>
+    <div class="hud-pill">
+      <span>FPS:</span> <strong id="hud-fps" style="color: var(--neon-cyan)">60</strong>
+      <span style="opacity: 0.5">|</span>
+      <span id="hud-latency" style="color: var(--neon-green)">16ms</span>
+    </div>
+    <div class="hud-pill">
+      <span id="hud-clock">00:00:00.0</span>
+    </div>
+  </header>
+
+  <!-- Top-Center Debug Curl Bars Overlay (User's Exact Mapping) -->
+  <div id="debug-curl-panel" class="debug-curl-panel">
+    <!-- Thumb: Right Arm -->
+    <div class="curl-item" title="Thumb controls Robot Right Arm (raise and lower)">
+      <span class="curl-label">THUMB: R-ARM</span>
+      <div class="curl-bar-track">
+        <div class="curl-bar-deadzone"></div>
+        <div id="curl-fill-thumb" class="curl-bar-fill"></div>
+      </div>
+      <span id="curl-val-thumb" class="curl-val">0.00</span>
+    </div>
+
+    <!-- Index: Left Arm -->
+    <div class="curl-item" title="Index controls Robot Left Arm (raise and lower)">
+      <span class="curl-label">INDEX: L-ARM</span>
+      <div class="curl-bar-track">
+        <div class="curl-bar-deadzone"></div>
+        <div id="curl-fill-index" class="curl-bar-fill"></div>
+      </div>
+      <span id="curl-val-index" class="curl-val">0.00</span>
+    </div>
+
+    <!-- Middle: Legs / Walk -->
+    <div class="curl-item" title="Middle controls Robot Legs (walking / running stride cycle)">
+      <span class="curl-label">MID: LEGS/WALK</span>
+      <div class="curl-bar-track">
+        <div class="curl-bar-deadzone"></div>
+        <div id="curl-fill-middle" class="curl-bar-fill"></div>
+      </div>
+      <span id="curl-val-middle" class="curl-val">0.00</span>
+    </div>
+
+    <!-- Ring: Body Rotation -->
+    <div class="curl-item" title="Ring controls Robot Body (rotate left and right)">
+      <span class="curl-label">RING: BODY ROT</span>
+      <div class="curl-bar-track">
+        <div class="curl-bar-deadzone"></div>
+        <div id="curl-fill-ring" class="curl-bar-fill"></div>
+      </div>
+      <span id="curl-val-ring" class="curl-val">0.00</span>
+    </div>
+
+    <!-- Pinky: Jump / Crouch -->
+    <div class="curl-item" title="Pinky controls Robot Movement (jump up / crouch down)">
+      <span class="curl-label">PINKY: JUMP/CROUCH</span>
+      <div class="curl-bar-track">
+        <div class="curl-bar-deadzone"></div>
+        <div id="curl-fill-pinky" class="curl-bar-fill"></div>
+      </div>
+      <span id="curl-val-pinky" class="curl-val">0.00</span>
+    </div>
+  </div>
+
+  <!-- 4 Holographic Blueprint Cards (Exact Replica of Uploaded Blueprint Image) -->
+
+  <!-- 1. Top-Left: Patterns & Data Feed -->
+  <aside id="card-data-feed" class="blueprint-card top-left">
+    <div class="card-corner tl"></div><div class="card-corner tr"></div>
+    <div class="card-corner bl"></div><div class="card-corner br"></div>
+    <div class="card-header">
+      <span class="card-title">PATTERNS & DATA FEED</span>
+      <span class="card-dot"></span>
+    </div>
+    <div class="card-body">
+      <div class="card-row">
+        <span>TETHER STREAM:</span>
+        <strong id="tel-data-strands" class="cyan">5 TETHERS SYNCED</strong>
+      </div>
+      <div class="card-row">
+        <span>PALM STATE:</span>
+        <span class="amber">OPEN / BROADCAST</span>
+      </div>
+      <div class="card-row">
+        <span>KINEMATICS:</span>
+        <span>5-JOINT ARTICULATED</span>
+      </div>
+      <div class="card-metric-bar">
+        <div class="metric-fill" style="width: 82%;"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 2. Top-Right: Pinch & Grab / Target Select -->
+  <aside id="card-pinch-grab" class="blueprint-card top-right">
+    <div class="card-corner tl"></div><div class="card-corner tr"></div>
+    <div class="card-corner bl"></div><div class="card-corner br"></div>
+    <div class="card-header">
+      <span class="card-title">PINCH & GRAB / TARGET SELECT</span>
+      <span class="card-dot amber"></span>
+    </div>
+    <div class="card-body">
+      <div class="card-row">
+        <span>TARGET RETICLE:</span>
+        <strong id="tel-pinch-lock" class="amber">SEARCHING</strong>
+      </div>
+      <div class="card-row">
+        <span>PINCH DISTANCE:</span>
+        <span id="tel-pinch-dist">0.000</span>
+      </div>
+      <div class="card-row">
+        <span>INTERACTION:</span>
+        <span>GRAB & HEAVY LIFT</span>
+      </div>
+      <div class="card-metric-bar">
+        <div class="metric-fill amber" style="width: 65%;"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 3. Bottom-Left: Rotate & Drag Interaction -->
+  <aside id="card-rotate-drag" class="blueprint-card bottom-left">
+    <div class="card-corner tl"></div><div class="card-corner tr"></div>
+    <div class="card-corner bl"></div><div class="card-corner br"></div>
+    <div class="card-header">
+      <span class="card-title">ROTATE & DRAG INTERACTION</span>
+      <span class="card-dot"></span>
+    </div>
+    <div class="card-body">
+      <div class="card-row">
+        <span>ROBOT ORBIT YAW:</span>
+        <strong id="tel-orbit-yaw" class="cyan">+0°</strong>
+      </div>
+      <div class="card-row">
+        <span>DELTA DISPLACEMENT:</span>
+        <span id="tel-drag-delta">ΔX: 0.000</span>
+      </div>
+      <div class="card-row">
+        <span>ORBIT PHYSICS:</span>
+        <span>LERP DEADZONE ACTIVE</span>
+      </div>
+      <div class="card-metric-bar">
+        <div class="metric-fill" style="width: 48%;"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 4. Bottom-Right: Peace / Launch Beams -->
+  <aside id="card-peace-beams" class="blueprint-card bottom-right">
+    <div class="card-corner tl"></div><div class="card-corner tr"></div>
+    <div class="card-corner bl"></div><div class="card-corner br"></div>
+    <div class="card-header">
+      <span class="card-title">PEACE / LAUNCH BEAMS</span>
+      <span class="card-dot cyan"></span>
+    </div>
+    <div class="card-body">
+      <div class="card-row">
+        <span>BEAM EMITTERS:</span>
+        <strong id="tel-beam-status" class="cyan">STANDBY</strong>
+      </div>
+      <div class="card-row">
+        <span>CHANNELS:</span>
+        <span>L8 (INDEX) + L12 (MID)</span>
+      </div>
+      <div class="card-row">
+        <span>ENERGY BLEND:</span>
+        <span>ADDITIVE PHOTONIC</span>
+      </div>
+      <div class="card-metric-bar">
+        <div class="metric-fill cyan" style="width: 90%;"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Right Side: Terminal Log Panel with Agent Task Queue -->
+  <aside id="terminal-panel" class="terminal-panel hidden">
+    <div class="terminal-header">
+      <span class="terminal-title">TERMINAL // AGENT TASK QUEUE</span>
+      <span style="font-size: 10px; color: var(--neon-amber)">[SYS: LIVE]</span>
+    </div>
+    <div id="terminal-body" class="terminal-body">
+      <!-- Auto-scrolling typewriter lines populated by agentBrain.js -->
+    </div>
+    <div class="terminal-footer">
+      <span>AUTONOMOUS AGENTIC PIPELINE</span>
+      <span>cadence: 35ms</span>
+    </div>
+  </aside>
+
+  <!-- Bottom Floating Action Dock -->
+  <nav class="bottom-dock">
+    <button id="btn-open-guide" class="dock-btn highlight" title="Open complete Hand Signs & Movement Plan">
+      🖐️ HAND SIGNS GUIDE
+    </button>
+    <button id="btn-toggle-strings" class="dock-btn active" title="Toggle visible puppet strings">
+      STRINGS: ON
+    </button>
+    <button id="btn-toggle-cards" class="dock-btn active" title="Toggle the 4 holographic blueprint cards">
+      HUD CARDS: ON
+    </button>
+    <button id="btn-toggle-terminal" class="dock-btn" title="Toggle agent terminal panel">
+      TERMINAL: OFF
+    </button>
+    <button id="btn-toggle-model" class="dock-btn active" title="Active Model: 3D Rigged Android (Full Kinematics Active)">
+      ROBOT: ANDROID ONLINE
+    </button>
+    <button id="btn-toggle-tracking" class="dock-btn active" title="Toggle full 1:1 mirror motion vs stationary centered pivot">
+      MIRROR: 1:1 MOTION
+    </button>
+    <button id="btn-toggle-zoom" class="dock-btn" title="Cycle camera zoom framing presets">
+      ZOOM: 0.8x (WIDE DEFAULT)
+    </button>
+    <button id="btn-reset-robot" class="dock-btn" title="Reset camera zoom and robot pose">
+      RE-CENTER
+    </button>
+    <button id="btn-toggle-cam-device" class="dock-btn highlight" title="Switch camera device (DroidCam / HD Webcam)">
+      📷 CAM: DETECTING...
+    </button>
+
+    <button id="btn-open-settings" class="dock-btn" title="Open configuration options">
+      SETTINGS
+    </button>
+  </nav>
+
+  <!-- Interactive Hand Signs Master Plan Guide Modal -->
+  <div id="guide-modal" class="guide-modal hidden">
+    <div class="guide-box">
+      <div class="guide-header">
+        <div class="guide-title-wrap">
+          <span class="guide-badge">MASTER PLAN</span>
+          <h2 class="guide-title">HAND SIGNS & MOVEMENT PROTOCOL</h2>
+        </div>
+        <div class="guide-detected-pill">
+          <span>CURRENT SIGN:</span>
+          <strong id="guide-detected-sign" class="cyan">STANDBY</strong>
+        </div>
+      </div>
+
+      <div class="guide-scrollable">
+        <!-- Section 0: Dual-Hand Master Puppeteering -->
+        <div class="guide-section">
+          <h3 class="section-title">⚡ DUAL-HAND (2-HAND) MASTER PROTOCOL (NATURAL HUMAN MOTION)</h3>
+          <div class="guide-grid">
+            <div class="guide-card amber-border">
+              <div class="card-icon">🖐️</div>
+              <div class="card-text">
+                <strong class="amber">RIGHT HAND ➔ RIGHT ARM</strong>
+                <p>• <strong>Raise Right Hand:</strong> Robot's Right Arm raises up smoothly</p>
+                <p>• <strong>Lower Right Hand:</strong> Robot's Right Arm lowers to side</p>
+              </div>
+            </div>
+
+            <div class="guide-card cyan-border">
+              <div class="card-icon">🖐️</div>
+              <div class="card-text">
+                <strong class="cyan">LEFT HAND ➔ LEFT ARM</strong>
+                <p>• <strong>Raise Left Hand:</strong> Robot's Left Arm raises up smoothly</p>
+                <p>• <strong>Lower Left Hand:</strong> Robot's Left Arm lowers to side</p>
+              </div>
+            </div>
+
+            <div class="guide-card">
+              <div class="card-icon">⬆️</div>
+              <div class="card-text">
+                <strong class="cyan">BOTH HANDS UP ➔ JUMP / FLY</strong>
+                <p>Lift both hands toward the top of the webcam.</p>
+                <p><em>Action:</em> Robot leaps high into the air and hovers in midair.</p>
+              </div>
+            </div>
+
+            <div class="guide-card">
+              <div class="card-icon">⬇️</div>
+              <div class="card-text">
+                <strong class="cyan">BOTH HANDS DOWN ➔ CROUCH</strong>
+                <p>Lower both hands toward the bottom of the webcam.</p>
+                <p><em>Action:</em> Robot compresses into a deep floor squat crouch.</p>
+              </div>
+            </div>
+
+            <div class="guide-card">
+              <div class="card-icon">🏃</div>
+              <div class="card-text">
+                <strong class="amber">PUMP HANDS ➔ WALK & RUN</strong>
+                <p>Alternate pumping your hands up and down (running arms).</p>
+                <p><em>Action:</em> Robot's legs swing in a full humanoid running stride!</p>
+              </div>
+            </div>
+
+            <div class="guide-card red-border">
+              <div class="card-icon">✊✊</div>
+              <div class="card-text">
+                <strong class="red">TWO FISTS ➔ SHIELD & STOP</strong>
+                <p>Close both hands into tight fists simultaneously.</p>
+                <p><em>Action:</em> Robot enters protective shield stance & stops.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 1: Individual Finger Kinematics -->
+        <div class="guide-section">
+          <h3 class="section-title">1. SINGLE-HAND FINGER CONTROLS (DIRECT LIMB MAPPING)</h3>
+          <div class="guide-grid">
+            <div class="guide-card">
+              <div class="card-icon">💪</div>
+              <div class="card-text">
+                <strong class="cyan">THUMB ➔ RIGHT ARM</strong>
+                <p>• <strong>Stick Thumb Out:</strong> Raises Robot's Right Arm Up high</p>
+                <p>• <strong>Fold Thumb In:</strong> Lowers Right Arm smoothly to side</p>
+              </div>
+            </div>
+
+            <div class="guide-card">
+              <div class="card-icon">🦾</div>
+              <div class="card-text">
+                <strong class="cyan">INDEX ➔ LEFT ARM</strong>
+                <p>• <strong>Point Index Up:</strong> Raises Robot's Left Arm Up high</p>
+                <p>• <strong>Curl Index Down:</strong> Lowers Left Arm smoothly to side</p>
+              </div>
+            </div>
+
+            <div class="guide-card">
+              <div class="card-icon">🦿</div>
+              <div class="card-text">
+                <strong class="cyan">MIDDLE ➔ LEGS (WALK / RUN)</strong>
+                <p>• <strong>Curl / Pulse Middle:</strong> Triggers fluid humanoid walk strides</p>
+                <p>• <strong>Keep Straight:</strong> Robot stands firmly in idle stance</p>
+              </div>
+            </div>
+
+            <div class="guide-card">
+              <div class="card-icon">🔄</div>
+              <div class="card-text">
+                <strong class="cyan">RING ➔ BODY ROTATION (YAW)</strong>
+                <p>• <strong>Curl Ring Finger:</strong> Rotates Robot Torso to the Right</p>
+                <p>• <strong>Extend Ring Finger:</strong> Rotates Robot Torso to the Left</p>
+              </div>
+            </div>
+
+            <div class="guide-card">
+              <div class="card-icon">⬆️</div>
+              <div class="card-text">
+                <strong class="cyan">PINKY ➔ JUMP & CROUCH</strong>
+                <p>• <strong>Extend Pinky High:</strong> Robot Jumps up into the air</p>
+                <p>• <strong>Curl Pinky Tight:</strong> Robot Crouches down deep to floor</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Special Hand Gestures -->
+        <div class="guide-section">
+          <h3 class="section-title">2. COMBINATION SIGNS & SCI-FI GESTURES</h3>
+          <div class="guide-grid">
+            <div class="guide-card amber-border">
+              <div class="card-icon">🖐️</div>
+              <div class="card-text">
+                <strong class="amber">OPEN PALM (READY / TETHERS)</strong>
+                <p>Face camera with all 5 fingers open like high-five.</p>
+                <p><em>Action:</em> Robot stands ready; 5 glowing Bezier puppet strings tether to joints.</p>
+              </div>
+            </div>
+
+            <div class="guide-card amber-border">
+              <div class="card-icon">👌</div>
+              <div class="card-text">
+                <strong class="amber">PINCH (TARGET & HEAVY LIFT)</strong>
+                <p>Pinch Thumb tip and Index tip together.</p>
+                <p><em>Action:</em> Reticle locks on robot chest. <strong>Lift hand up</strong> = HEAVY LIFTING!</p>
+              </div>
+            </div>
+
+            <div class="guide-card cyan-border">
+              <div class="card-icon">✌️</div>
+              <div class="card-text">
+                <strong class="cyan">PEACE SIGN (LAUNCH BEAMS)</strong>
+                <p>Extend Index + Middle fingers in a "V", curl Ring & Pinky.</p>
+                <p><em>Action:</em> Concentrated dual photonic laser beams fire from fingertips!</p>
+              </div>
+            </div>
+
+            <div class="guide-card red-border">
+              <div class="card-icon">✊</div>
+              <div class="card-text">
+                <strong class="red">CLOSED FIST (EMERGENCY STOP)</strong>
+                <p>Curl all 5 fingers into a tight fist.</p>
+                <p><em>Action:</em> Robot freezes instantly in crouch defense and resets queue.</p>
+              </div>
+            </div>
+
+            <div class="guide-card">
+              <div class="card-icon">↔️</div>
+              <div class="card-text">
+                <strong class="cyan">HAND DRAG (ORBIT ROTATION)</strong>
+                <p>Translate your whole hand horizontally left or right.</p>
+                <p><em>Action:</em> Smoothly rotates/orbits the 3D robot on its Y-axis in 360°.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="guide-footer">
+        <span style="font-size: 10px; color: #79a7c7;">💡 PRO TIP: Keep hand 1.5 - 2.5 feet from webcam with good front lighting for best tracking.</span>
+        <button id="btn-close-guide" class="guide-close-btn">GOT IT // CLOSE GUIDE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal Dialog -->
+  <div id="settings-modal" class="settings-modal hidden">
+    <div class="settings-box">
+      <div class="settings-title">
+        <span>AGENTIC MATRIX // CONFIGURATION</span>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label">PUPPET STRINGS DISPLAY:</span>
+        <button id="opt-toggle-strings" class="settings-toggle active">ENABLED</button>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label">CAMERA SOURCE:</span>
+        <select id="settings-camera-select" class="settings-select" title="Choose input camera (DroidCam, Integrated Webcam, etc.)"></select>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label">TERMINAL PANEL DISPLAY:</span>
+        <button id="opt-toggle-terminal" class="settings-toggle">DISABLED</button>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label">DEBUG FINGER CURL BARS:</span>
+        <button id="opt-toggle-debug" class="settings-toggle active">ENABLED</button>
+      </div>
+
+      <div class="settings-row">
+        <span class="settings-label">AGENT BRAIN MODE:</span>
+        <button id="opt-agent-mode" class="settings-toggle">MOCK AGENT</button>
+      </div>
+
+      <div id="claude-key-group" class="settings-row hidden" style="flex-direction: column; align-items: flex-start;">
+        <span class="settings-label">ANTHROPIC CLAUDE API KEY (REAL MODE):</span>
+        <input type="password" id="input-claude-key" class="settings-input" placeholder="sk-ant-api03-..." />
+        <span style="font-size: 10px; color: #79a7c7">Stored securely in browser localStorage only.</span>
+      </div>
+
+      <button id="btn-close-settings" class="settings-close-btn">APPLY & CLOSE</button>
+    </div>
+  </div>
+
+  <!-- Camera Device Selection Modal Dialog -->
+  <div id="camera-modal" class="settings-modal hidden">
+    <div class="settings-box" style="max-width: 480px;">
+      <div class="settings-title">
+        <span>SELECT VIDEO CAMERA SOURCE</span>
+      </div>
+      <p style="font-size: 11px; color: #8bb8d8; line-height: 1.5; margin-bottom: 14px;">
+        Click any detected camera to switch its live video feed into the Agentic Matrix:
+      </p>
+
+      <div id="camera-device-list" class="camera-device-list">
+        <!-- Populated dynamically with camera cards -->
+      </div>
+
+      <div id="camera-in-use-alert" class="hidden" style="background: rgba(255, 51, 102, 0.15); border: 1px solid var(--neon-red); padding: 12px; border-radius: 6px; color: #ff99aa; font-size: 11px; margin-top: 10px; line-height: 1.5;">
+        <strong style="color: var(--neon-red); display: block; margin-bottom: 4px;">⚠️ CAMERA IN USE BY ANOTHER APP</strong>
+        <span id="camera-error-detail">DroidCam is currently open in OBS Studio. In OBS, click "Start Virtual Camera" on the right panel and select "OBS Virtual Camera", or close OBS to free DroidCam.</span>
+      </div>
+
+      <button id="btn-close-camera-modal" class="settings-close-btn" style="margin-top: 14px;">CLOSE</button>
+    </div>
+  </div>
+
+  <!-- Start / Permission Splash Modal (Hidden by default so robot & UI are always visible) -->
+  <div id="start-modal" class="hidden" style="display: none;">
+    <div class="start-box">
+      <h1 class="start-title">AGENTIC CONTROL MATRIX</h1>
+      <p class="start-desc">
+        Futuristic Hand-Gesture 3D Holographic Robot Interface. Control individual limbs with your fingers, orbit the robot, trigger launch beams, and execute autonomous tasks.
+      </p>
+      <div class="start-cam-select-row">
+        <span style="font-size: 11px; color: var(--neon-cyan); letter-spacing: 1px;">CAMERA SOURCE:</span>
+        <select id="start-camera-select" class="settings-select" title="Choose input webcam or DroidCam">
+          <option value="">Searching for cameras (DroidCam / Webcam)...</option>
+        </select>
+      </div>
+
+      <div class="start-buttons">
+        <button id="btn-start-camera" class="btn-cam">INITIALIZE WEBCAM</button>
+
+      </div>
+      <div id="modal-status">AWAITING CAMERA INITIALIZATION</div>
+    </div>
+  </div>
+
+  <!-- Main ES Module Script -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

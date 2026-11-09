@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Production build
+dist/
+
+# User Media & Videos (Privacy Protected)
+*.mp4
+*.webm
+*.mov
+*.avi
+*.mkv
+video_frames/
+*.png
+
+# Temporary test profiles & caches
+tmp_*
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
